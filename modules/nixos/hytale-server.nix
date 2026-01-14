@@ -6,7 +6,7 @@
   ...
 }: let
   inherit (builtins) concatStringsSep;
-  inherit (lib) mkIf mkOption mkEnableOption types optionals optionalString;
+  inherit (lib) mkIf mkOption mkEnableOption types optionals optional;
 
   cfg = config.services.hytale-server;
 in {
@@ -28,10 +28,11 @@ in {
       default = "/var/lib/hytale-server";
     };
     port = mkOption {
-      description = "The UDP port the server will be bound to";
+      description = "The UDP port the server will be bound to.";
       type = types.port;
       default = 5520;
     };
+    openFirewall = mkEnableOption "opening the firewall on the defined UDP port";
     hytaleDownloaderPackage = mkOption {
       description = "Package that contains the hytale-downloader binary";
       type = types.package;
@@ -47,6 +48,8 @@ in {
   };
 
   config = mkIf cfg.enable {
+    networking.firewall.allowedUDPPorts = optional cfg.openFirewall cfg.port;
+
     environment.systemPackages = [
       (pkgs.writeShellApplication {
         name = "hytale-server-cmd";
